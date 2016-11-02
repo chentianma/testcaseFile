@@ -23,11 +23,16 @@ class LoginTestCase(unittest.TestCase):
         pass
 
     def get_data(self, filename='teachers.xlsx'):
+        self.file = input('Input the filename:')
+        if self.file:
+            self.filename = self.file
+        else:
+            self.filename = filename
         try:
-            data = xlrd.open_workbook(filename)
+            data = xlrd.open_workbook(self.filename)
             self.table = data.sheets()[0]
-            self.nrows = self.table.nrows
-            self.ncols = self.table.ncols
+            nrows = self.table.nrows
+            ncols = self.table.ncols
             self.phone = self.table.col_values(2)
             self.pw = self.table.col_values(3)
             self.cellphone = []
@@ -35,44 +40,45 @@ class LoginTestCase(unittest.TestCase):
         except Exception as err:
             print(err)
 
-        for i in range(1, self.nrows):
+        for i in range(1, nrows):
             self.cellphone.append(int(self.phone[i]))
             self.pwlist.append(int(self.pw[i]))
             # print('%s : %s' % (i, cellphone[i - 1]))
         return self.cellphone, self.pwlist
 
     def test_login(self):
-        celllist, pwlist = self.get_data()
-        n = len(celllist)
+        self.celllist, self.pwlist = self.get_data()
+        n = len(self.celllist)
         error = 0
-        list = []
+        self.list = []
+
         for i in range(0, n):
-            userid = celllist[i]
-            password = pwlist[i]
-            data = {'loginId': userid,
+            self.userid = self.celllist[i]
+            self.password = self.pwlist[i]
+            data = {'loginId': self.userid,
                     'loginType': 'phone',
-                    'loginPassword': password}
+                    'loginPassword': self.password}
 
             try:
                 url = 'http://qudu.joy-read.com/member/login'
-                r = requests.get(url, params=data)
-                re_json = json.loads(r.text)
+                res = requests.get(url, params=data)
+                re_json = json.loads(res.text)
             except Exception as e:
                 logging.warning('Bad request!')
 
-            if r.status_code == requests.codes.ok:
+            if res.status_code == requests.codes.ok:
                 if re_json['resultStatus']:
                     logging.info(':User login successfully!')
                 else:
                     error += 1
                     list.append(i)
                     logging.warning(':Login false! ErrorMsg: %s. Current user: %s'
-                                % (re_json['errorMsg'], userid))
+                                % (re_json['errorMsg'], self.userid))
 
-        time.sleep(3)
+        time.sleep(2)
         if error >= 1:
             print('ErrorCount : %s' % error)
-            print('The list of error: %s' % list)
+            print('The list of error: %s' % self.list)
         elif error == 0:
             print('All users authenticated successfully!')
 
